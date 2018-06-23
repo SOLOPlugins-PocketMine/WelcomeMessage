@@ -6,7 +6,7 @@ use pocketmine\Player;
 use pocketmine\plugin\PluginBase;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerJoinEvent;
-use pocketmine\scheduler\PluginTask;
+use pocketmine\scheduler\Task;
 use pocketmine\utils\Config;
 
 class Main extends PluginBase implements Listener{
@@ -30,10 +30,6 @@ class Main extends PluginBase implements Listener{
 		$this->getServer()->getPluginManager()->registerEvents($this, $this);
 	}
 
-	public function onDisable(){
-
-	}
-
 	public function onJoin(PlayerJoinEvent $event){
 		$player = $event->getPlayer();
 		if(($message = $this->config->get("message")) !== ""){
@@ -46,22 +42,23 @@ class Main extends PluginBase implements Listener{
 			$player->sendTip($this->replaceParameters($player, $tip));
 		}
 		if($this->config->get("title") !== ""){
-			$this->getServer()->getScheduler()->scheduleDelayedTask(new class($this, $event->getPlayer()) extends PluginTask{
-				public $player;
+			$this->getScheduler()->scheduleDelayedTask(new class($this, $event->getPlayer()) extends Task{
+				private $owner;
+				private $player;
 
-				public function __construct(Main $plugin, Player $player){
-					parent::__construct($plugin);
+				public function __construct(Main $owner, Player $player){
+					$this->owner = $owner;
 					$this->player = $player;
 				}
 
 				public function onRun($currentTick){
 					$player = $this->player;
-					$plugin = $this->owner;
-					$config = $plugin->config;
+					$owner = $this->owner;
+					$config = $owner->config;
 
-					$title = $plugin->replaceParameters($player, $config->get("title"));
-					$subtitle = $plugin->replaceParameters($player, $config->get("subtitle"));
-					$actionbar = $plugin->replaceParameters($player, $config->get("actionbar"));
+					$title = $owner->replaceParameters($player, $config->get("title"));
+					$subtitle = $owner->replaceParameters($player, $config->get("subtitle"));
+					$actionbar = $owner->replaceParameters($player, $config->get("actionbar"));
 
 					$fadein = $config->get("fadein");
 					$stay = $config->get("stay");
